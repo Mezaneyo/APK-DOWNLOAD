@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - APK Manager</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .card { background: white; border-radius: 20px; padding: 30px; margin-bottom: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+        h1 { color: #333; margin-bottom: 10px; }
+        h2 { color: #555; margin: 20px 0 10px 0; font-size: 1.3rem; }
+        input, textarea, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
+        button { background: #4CAF50; color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; margin: 10px 0; }
+        button:hover { background: #45a049; }
+        .upload-area { border: 2px dashed #4CAF50; padding: 20px; border-radius: 12px; text-align: center; margin: 20px 0; }
+        .app-item { background: #f5f5f5; padding: 15px; margin: 10px 0; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .status { padding: 10px; border-radius: 8px; margin: 10px 0; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        .token-input { background: #fff9e6; border-color: #ffc107; }
+        footer { text-align: center; margin-top: 30px; color: white; }
+        a { color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>📱 APK Admin Manager</h1>
+            <p style="color: #666; margin-bottom: 20px;">Upload APKs and manage your app store</p>
+            
+            <!-- Token Input Section -->
+            <div id="tokenSection">
+                <label style="font-weight: bold;">🔑 GitHub Token (Required)</label>
+                <input type="password" id="githubToken" class="token-input" placeholder="Enter your GitHub Personal Access Token" style="font-family: monospace;">
+                <p style="font-size: 12px; color: #666; margin-top: 5px;">
+                    Need a token? <a href="https://github.com/settings/tokens/new" target="_blank" style="color: #4CAF50;">Create one</a> with 'repo' scope. 
+                    Token is stored only in your browser for this session.
+                </p>
+                <button onclick="connectGitHub()" style="background: #2196F3;">🔌 Connect to GitHub</button>
+            </div>
+            
+            <!-- Admin Controls (hidden until connected) -->
+            <div id="adminControls" style="display: none;">
+                <div id="connectionStatus" class="status success" style="display: none;"></div>
+                
+                <div class="upload-area">
+                    <h3>📤 Upload New APK</h3>
+                    <input type="file" id="apkFile" accept=".apk">
+                    <input type="text" id="appName" placeholder="App Name (e.g., Brains AI)">
+                    <input type="text" id="appVersion" placeholder="Version (e.g., 4.0)">
+                    <input type="text" id="appSize" placeholder="Size (e.g., 24MB)">
+                    <input type="text" id="appCategory" placeholder="Category (e.g., AI, Games, Tools)">
+                    <textarea id="appDesc" rows="3" placeholder="Short description (shown in search results)"></textarea>
+                    <textarea id="appLongDesc" rows="4" placeholder="Long description (shown on app details page)"></textarea>
+                    <button onclick="uploadApk()">🚀 Upload & Publish</button>
+                    <div id="uploadStatus"></div>
+                </div>
+                
+                <h2>📦 Existing Apps</h2>
+                <div id="appsList">Loading...</div>
+                
+                <button onclick="refreshApps()" style="background: #666;">🔄 Refresh List</button>
+                <button onclick="disconnect()" style="background: #dc3545; margin-left: 10px;">🔌 Disconnect</button>
+            </div>
+        </div>
+        
+        <footer>
+            <p>🔒 Your token is stored only in your browser and never saved to any server.</p>
+            <p><a href="index.html" style="color: white;">← Back to Store</a></p>
+        </footer>
+    </div>
+
+    <script>
+        let githubToken = '';
+        const REPO_OWNER = 'Mezaneyo';
+        const REPO_NAME = 'APK-DOWNLOAD';
+
+        function connectGitHub() {
+            const token = document.getElementById('githubToken').value.trim();
+            if (!token) {
+                alert('Please enter your GitHub token');
+                return;
+            }
+            
+            if (!token.startsWith('ghp_')) {
+                alert('⚠️ That doesn\'t look like a valid GitHub token. Tokens should start with "ghp_"');
+                return;
+            }
+            
+            githubToken = token;
+            
+            // Test the token
+            testToken();
+        }
+        
+        async function testToken() {
+            showStatus('Testing connection...', 'warning');
+            
+            try {
+                const response = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}`, {
+                    headers: { 'Authorization': `token ${githubToken}` }
+                });
+                
+                if (response.ok) {
+                    document.getElementById('tokenSection').style.display = 'none';
+                    document.getElementById('adminControls').style.display = 'block';
+                    showStatus('✅ Connected to GitHub successfully!', 'success');
+                    loadExistingApps();
+                } else {
+                    const error = await response.json();
+                    showStatus(`❌ Connection failed: ${error.message}. Check your token permissions.`, 'error');
+                }
+            } catch (error) {
+                showStatus('❌ Network error. Check your connection.', 'error');
+            }
+        }
+        
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('connectionStatus');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+            statusDiv.style.display = 'block';
+            setTimeout(() => {
+                if (type !== 'error') {
+                    statusDiv.style.display = 'none';
+                }
+            }, 5000);
+        }
+        
+        async function loadExistingApps() {
+            try {
+                const response = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/`, {
+                    headers: { 'Authorization': `token ${githubToken}` }
+                });
+                const files = await response.json();
+                const apks = files.filter(f => f.name.endsWith('.apk'));
+                
+                if (apks.length === 0) {
+                    document.getElementById('appsList').innerHTML = '<p style="color: #999;">No APK files found in repository</p>';
+                } else {
+                    document.getElementById('appsList').innerHTML = apks.map(apk => `
+                        <div class="app-item">
+                            <div>
+                                <strong>📱 ${apk.name}</strong><br>
+                                <small>Size: ${(apk.size / 1024 / 1024).toFixed(2)} MB</small>
+                            </div>
+                            <a href="${apk.download_url}" target="_blank" style="color: #2196F3;">Download</a>
+                        </div>
+                    `).join('');
+                }
+            } catch(error) {
+                document.getElementById('appsList').innerHTML = '<p class="error">Error loading files</p>';
+            }
+        }
+        
+        async function uploadApk() {
+            const fileInput = document.getElementById('apkFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Select an APK file to upload');
+                return;
+            }
+            
+            const appName = document.getElementById('appName').value.trim();
+            if (!appName) {
+                alert('Enter the app name');
+                return;
+            }
+            
+            const statusDiv = document.getElementById('uploadStatus');
+            statusDiv.innerHTML = '<div class="status warning">⏳ Uploading to GitHub...</div>';
+            
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const base64Content = e.target.result.split(',')[1];
+                const filePath = file.name;
+                
+                try {
+                    // Upload APK
+                    const uploadResponse = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${filePath}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `token ${githubToken}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            message: `Add ${file.name}`,
+                            content: base64Content,
+                            branch: 'main'
+                        })
+                    });
+                    
+                    if (!uploadResponse.ok) {
+                        throw new Error('APK upload failed');
+                    }
+                    
+                    statusDiv.innerHTML = '<div class="status success">✅ APK uploaded! Updating apps.json...</div>';
+                    
+                    // Update apps.json
+                    await updateAppsJson(file.name);
+                    
+                    statusDiv.innerHTML = '<div class="status success">✅ App published successfully! Vercel will auto-deploy in ~1 minute.</div>';
+                    
+                    // Clear form
+                    document.getElementById('appName').value = '';
+                    document.getElementById('appVersion').value = '';
+                    document.getElementById('appSize').value = '';
+                    document.getElementById('appCategory').value = '';
+                    document.getElementById('appDesc').value = '';
+                    document.getElementById('appLongDesc').value = '';
+                    fileInput.value = '';
+                    
+                    // Refresh list
+                    loadExistingApps();
+                    
+                } catch (error) {
+                    statusDiv.innerHTML = `<div class="status error">❌ Error: ${error.message}</div>`;
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        async function updateAppsJson(apkFilename) {
+            const appId = apkFilename.replace('.apk', '').toLowerCase().replace(/[^a-z0-9]/g, '-');
+            
+            const newApp = {
+                id: appId,
+                name: document.getElementById('appName').value,
+                filename: apkFilename,
+                version: document.getElementById('appVersion').value || '1.0',
+                size: document.getElementById('appSize').value || 'Unknown',
+                category: document.getElementById('appCategory').value || 'Apps',
+                description: document.getElementById('appDesc').value || 'No description',
+                longDescription: document.getElementById('appLongDesc').value || document.getElementById('appDesc').value,
+                downloads: 0,
+                rating: 0,
+                developer: REPO_OWNER,
+                lastUpdated: new Date().toISOString().split('T')[0]
+            };
+            
+            // Get existing apps.json
+            let existingApps = { apps: [] };
+            let sha = null;
+            
+            try {
+                const getResponse = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/apps.json`, {
+                    headers: { 'Authorization': `token ${githubToken}` }
+                });
+                if (getResponse.ok) {
+                    const data = await getResponse.json();
+                    sha = data.sha;
+                    const content = atob(data.content);
+                    existingApps = JSON.parse(content);
+                }
+            } catch(e) {
+                // apps.json doesn't exist yet, will create it
+            }
+            
+            existingApps.apps.push(newApp);
+            
+            // Upload updated apps.json
+            const uploadResponse = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/apps.json`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `token ${githubToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    message: 'Update apps.json with new app',
+                    content: btoa(JSON.stringify(existingApps, null, 2)),
+                    sha: sha,
+                    branch: 'main'
+                })
+            });
+            
+            if (!uploadResponse.ok) {
+                throw new Error('Failed to update apps.json');
+            }
+        }
+        
+        function refreshApps() {
+            loadExistingApps();
+        }
+        
+        function disconnect() {
+            githubToken = '';
+            document.getElementById('tokenSection').style.display = 'block';
+            document.getElementById('adminControls').style.display = 'none';
+            document.getElementById('githubToken').value = '';
+            document.getElementById('connectionStatus').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+{
+  "apps": [
+    {
+      "id": "brains-v4",
+      "name": "Brains AI V4",
+      "filename": "BrainsV4.apk",
+      "version": "4.0",
+      "size": "24MB",
+      "category": "AI",
+      "description": "AI-powered assistant with smart responses",
+      "longDescription": "Brains AI V4 helps with daily tasks, answers questions intelligently.",
+      "downloads": 0,
+      "rating": 0,
+      "developer": "Mezaneyo",
+      "lastUpdated": "2026-06-01"
+    }
+  ]
+}

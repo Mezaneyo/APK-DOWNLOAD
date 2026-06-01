@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Details</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
+        .back-btn { display: inline-block; margin-bottom: 20px; color: #667eea; text-decoration: none; }
+        .app-detail { background: white; border-radius: 20px; padding: 30px; max-width: 800px; margin: 0 auto; }
+        .download-btn { background: #4CAF50; color: white; font-size: 20px; padding: 12px 30px; border: none; border-radius: 50px; cursor: pointer; margin: 20px 0; }
+        .review { background: #f9f9f9; padding: 15px; margin: 10px 0; border-radius: 10px; }
+        .star { font-size: 28px; cursor: pointer; color: #ddd; display: inline-block; }
+        .star.selected { color: #ffc107; }
+        @media (max-width: 600px) { .app-detail { padding: 20px; } }
+    </style>
+</head>
+<body>
+    <div style="max-width: 800px; margin: 0 auto;">
+        <a href="index.html" class="back-btn">← Back</a>
+        <div class="app-detail" id="appDetail">Loading...</div>
+    </div>
+    <script>
+        const appId = new URLSearchParams(location.search).get('id');
+        let currentApp = null;
+        
+        async function loadDetails() {
+            const res = await fetch('apps.json?t='+Date.now());
+            const data = await res.json();
+            currentApp = data.apps.find(a => a.id === appId);
+            if(!currentApp) { document.getElementById('appDetail').innerHTML = 'App not found'; return; }
+            
+            const reviews = JSON.parse(localStorage.getItem(`reviews_${appId}`) || '[]');
+            const avgRating = reviews.length ? (reviews.reduce((s,r)=>s+r.rating,0)/reviews.length).toFixed(1) : 0;
+            
+            document.getElementById('appDetail').innerHTML = `
+                <h1>${currentApp.name}</h1>
+                <p>Version ${currentApp.version} | ${currentApp.size} | ${currentApp.developer||'Unknown'}</p>
+                <p>⭐ ${avgRating} (${reviews.length} reviews) • ${currentApp.downloads||0} downloads</p>
+                <button class="download-btn" onclick="downloadApp()">⬇️ Download APK</button>
+                <div><strong>Description:</strong><br>${currentApp.longDescription || currentApp.description}</div>
+                <h3>Reviews</h3>
+                <div id="reviews">${reviews.length ? reviews.map(r=>`<div class="review">⭐${r.rating} - ${r.comment}<br><small>${r.date}</small></div>`).join('') : '<p>No reviews yet</p>'}</div>
+                <h3>Write a Review</h3>
+                <div id="stars">${[1,2,3,4,5].map(i=>`<span class="star" data-rating="${i}">☆</span>`).join('')}</div>
+                <textarea id="comment" rows="3" style="width:100%; margin:10px 0;"></textarea>
+                <button onclick="submitReview()">Submit</button>
+            `;
+            
+            let selected = 0;
+            document.querySelectorAll('.star').forEach(s => {
+                s.onclick = () => {
+                    selected = parseInt(s.dataset.rating);
+                    document.querySelectorAll('.star').forEach((st, i) => {
+                        st.textContent = i < selected ? '★' : '☆';
+                        if(i < selected) st.classList.add('selected');
+                        else st.classList.remove('selected');
+                    });
+                };
+            });
+            
+            window.submitReview = () => {
+                if(!selected) { alert('Select rating'); return; }
+                const comment = document.getElementById('comment').value.trim();
+                if(!comment) { alert('Write a comment'); return; }
+                const reviews = JSON.parse(localStorage.getItem(`reviews_${appId}`) || '[]');
+                reviews.push({ rating: selected, comment, date: new Date().toLocaleString() });
+                localStorage.setItem(`reviews_${appId}`, JSON.stringify(reviews));
+                alert('Review added!');
+                location.reload();
+            };
+        }
+        
+        window.downloadApp = () => {
+            let downloads = parseInt(localStorage.getItem(`downloads_${appId}`) || currentApp.downloads || 0) + 1;
+            localStorage.setItem(`downloads_${appId}`, downloads);
+            window.location.href = currentApp.filename;
+        };
+        
+        loadDetails();
+    </script>
+</body>
+</html>
