@@ -13,6 +13,20 @@
       "rating": 0,
       "developer": "Mezaneyo",
       "lastUpdated": "2026-06-01"
+    },
+    {
+      "id": "app-release",
+      "name": "Tiksmbe",
+      "filename": "app-release.apk",
+      "version": "2.2",
+      "size": "1mb",
+      "category": "Communication ",
+      "description": "A platform where people can interact, share stories motivation and worries ",
+      "longDescription": "This app is capable of doing anonymous chatting, share stories anonymously and other things ",
+      "downloads": 0,
+      "rating": 0,
+      "developer": "Mezaneyo",
+      "lastUpdated": "2026-06-01"
     }
   ]
 }
