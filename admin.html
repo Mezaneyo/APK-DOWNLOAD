@@ -3,176 +3,281 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - APK Manager</title>
+    <title>Admin Dashboard - Complete App Manager</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
-        .container { max-width: 800px; margin: 0 auto; }
-        .card { background: white; border-radius: 20px; padding: 30px; margin-bottom: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
-        h1 { color: #333; margin-bottom: 10px; }
-        h2 { color: #555; margin: 20px 0 10px 0; font-size: 1.3rem; }
-        input, textarea, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
-        button { background: #4CAF50; color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; margin: 10px 0; }
-        button:hover { background: #45a049; }
-        .upload-area { border: 2px dashed #4CAF50; padding: 20px; border-radius: 12px; text-align: center; margin: 20px 0; }
-        .app-item { background: #f5f5f5; padding: 15px; margin: 10px 0; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; }
-        .status { padding: 10px; border-radius: 8px; margin: 10px 0; }
-        .success { background: #d4edda; color: #155724; }
-        .error { background: #f8d7da; color: #721c24; }
-        .warning { background: #fff3cd; color: #856404; }
-        .token-input { background: #fff9e6; border-color: #ffc107; }
-        footer { text-align: center; margin-top: 30px; color: white; }
-        a { color: white; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background: #f0f2f5; }
+        
+        /* Sidebar Layout */
+        .dashboard { display: flex; min-height: 100vh; }
+        .sidebar { width: 280px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px 20px; }
+        .sidebar h2 { margin-bottom: 30px; font-size: 1.5rem; }
+        .sidebar nav a { display: block; color: white; text-decoration: none; padding: 12px 15px; margin: 5px 0; border-radius: 10px; transition: background 0.3s; }
+        .sidebar nav a:hover, .sidebar nav a.active { background: rgba(255,255,255,0.2); }
+        
+        .main-content { flex: 1; padding: 30px; }
+        .header { background: white; padding: 20px; border-radius: 15px; margin-bottom: 25px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        
+        .card { background: white; border-radius: 15px; padding: 25px; margin-bottom: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+        .card h3 { margin-bottom: 20px; color: #333; border-left: 4px solid #667eea; padding-left: 15px; }
+        
+        input, textarea, select { width: 100%; padding: 12px; margin: 8px 0 15px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
+        button { background: #667eea; color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.3s; }
+        button:hover { background: #5a67d8; transform: translateY(-1px); }
+        .btn-danger { background: #e53e3e; }
+        .btn-danger:hover { background: #c53030; }
+        .btn-success { background: #48bb78; }
+        .btn-warning { background: #ed8936; }
+        
+        .apps-grid { display: grid; gap: 15px; }
+        .app-item { background: #f7f9fc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; transition: all 0.3s; }
+        .app-item:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); transform: translateY(-2px); }
+        .app-header { display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; margin-bottom: 15px; }
+        .app-name { font-size: 1.2rem; font-weight: bold; color: #2d3748; }
+        .app-actions button { margin-left: 8px; padding: 5px 12px; font-size: 12px; }
+        .app-details { color: #718096; font-size: 0.9rem; margin-top: 10px; }
+        .stats { display: inline-block; background: #e2e8f0; padding: 2px 8px; border-radius: 20px; font-size: 12px; margin-left: 10px; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: white; border-radius: 20px; padding: 30px; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; margin-bottom: 20px; }
+        .close { cursor: pointer; font-size: 24px; color: #999; }
+        
+        .alert { padding: 12px; border-radius: 8px; margin-bottom: 20px; }
+        .alert-success { background: #c6f6d5; color: #22543d; border: 1px solid #9ae6b4; }
+        .alert-error { background: #fed7d7; color: #742a2a; border: 1px solid #fc8181; }
+        
+        .token-section { text-align: center; padding: 40px; }
+        .stat-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 25px; }
+        .stat-card { background: white; padding: 20px; border-radius: 15px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .stat-number { font-size: 2rem; font-weight: bold; color: #667eea; }
+        
+        @media (max-width: 768px) { .dashboard { flex-direction: column; } .sidebar { width: 100%; text-align: center; } }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="card">
-            <h1>📱 APK Admin Manager</h1>
-            <p style="color: #666; margin-bottom: 20px;">Upload APKs and manage your app store</p>
-            
-            <!-- Token Input Section -->
-            <div id="tokenSection">
-                <label style="font-weight: bold;">🔑 GitHub Token (Required)</label>
-                <input type="password" id="githubToken" class="token-input" placeholder="Enter your GitHub Personal Access Token" style="font-family: monospace;">
-                <p style="font-size: 12px; color: #666; margin-top: 5px;">
-                    Need a token? <a href="https://github.com/settings/tokens/new" target="_blank" style="color: #4CAF50;">Create one</a> with 'repo' scope. 
-                    Token is stored only in your browser for this session.
-                </p>
-                <button onclick="connectGitHub()" style="background: #2196F3;">🔌 Connect to GitHub</button>
-            </div>
-            
-            <!-- Admin Controls (hidden until connected) -->
-            <div id="adminControls" style="display: none;">
-                <div id="connectionStatus" class="status success" style="display: none;"></div>
-                
-                <div class="upload-area">
-                    <h3>📤 Upload New APK</h3>
-                    <input type="file" id="apkFile" accept=".apk">
-                    <input type="text" id="appName" placeholder="App Name (e.g., Brains AI)">
-                    <input type="text" id="appVersion" placeholder="Version (e.g., 4.0)">
-                    <input type="text" id="appSize" placeholder="Size (e.g., 24MB)">
-                    <input type="text" id="appCategory" placeholder="Category (e.g., AI, Games, Tools)">
-                    <textarea id="appDesc" rows="3" placeholder="Short description (shown in search results)"></textarea>
-                    <textarea id="appLongDesc" rows="4" placeholder="Long description (shown on app details page)"></textarea>
-                    <button onclick="uploadApk()">🚀 Upload & Publish</button>
-                    <div id="uploadStatus"></div>
-                </div>
-                
-                <h2>📦 Existing Apps</h2>
-                <div id="appsList">Loading...</div>
-                
-                <button onclick="refreshApps()" style="background: #666;">🔄 Refresh List</button>
-                <button onclick="disconnect()" style="background: #dc3545; margin-left: 10px;">🔌 Disconnect</button>
-            </div>
+    <div class="dashboard">
+        <div class="sidebar">
+            <h2>📱 APK Manager</h2>
+            <nav>
+                <a href="#" onclick="showSection('dashboard')" class="active">📊 Dashboard</a>
+                <a href="#" onclick="showSection('addApp')">➕ Add New App</a>
+                <a href="#" onclick="showSection('manageApps')">📦 Manage Apps</a>
+                <a href="#" onclick="showSection('settings')">⚙️ Settings</a>
+                <a href="index.html" target="_blank">🌐 View Store</a>
+            </nav>
         </div>
         
-        <footer>
-            <p>🔒 Your token is stored only in your browser and never saved to any server.</p>
-            <p><a href="index.html" style="color: white;">← Back to Store</a></p>
-        </footer>
+        <div class="main-content">
+            <div id="tokenSection" class="card token-section">
+                <h3>🔐 Connect to GitHub</h3>
+                <input type="password" id="githubToken" placeholder="GitHub Personal Access Token" style="max-width: 400px; margin: 0 auto; display: block;">
+                <button onclick="connectGitHub()" style="margin-top: 15px;">Connect</button>
+                <p style="margin-top: 15px; font-size: 12px; color: #666;">Token needs 'repo' scope. Stored only in your browser.</p>
+            </div>
+            
+            <div id="adminContent" style="display: none;">
+                <div id="alertMessage"></div>
+                
+                <!-- Dashboard Section -->
+                <div id="dashboardSection">
+                    <div class="header">
+                        <h1>📊 Admin Dashboard</h1>
+                        <p>Welcome back! Manage your app store from here.</p>
+                    </div>
+                    <div class="stat-cards" id="statCards"></div>
+                    <div class="card">
+                        <h3>📌 Quick Actions</h3>
+                        <button onclick="showSection('addApp')">➕ Add New App</button>
+                        <button onclick="showSection('manageApps')" style="margin-left: 10px;">📦 Manage Existing Apps</button>
+                        <button onclick="backupData()" style="margin-left: 10px; background: #48bb78;">💾 Backup apps.json</button>
+                    </div>
+                    <div class="card">
+                        <h3>🔄 Recent Activity</h3>
+                        <div id="recentActivity"></div>
+                    </div>
+                </div>
+                
+                <!-- Add App Section -->
+                <div id="addAppSection" style="display: none;">
+                    <div class="card">
+                        <h3>➕ Upload New App</h3>
+                        <form id="uploadForm">
+                            <div style="border: 2px dashed #ccc; padding: 20px; text-align: center; margin-bottom: 15px;">
+                                <input type="file" id="apkFile" accept=".apk" required>
+                            </div>
+                            <input type="text" id="appName" placeholder="App Name *" required>
+                            <input type="text" id="appVersion" placeholder="Version (e.g., 1.0.0)" required>
+                            <input type="text" id="appSize" placeholder="Size (e.g., 24 MB)" required>
+                            <input type="text" id="appCategory" placeholder="Category (e.g., AI, Games, Tools)" required>
+                            <textarea id="appDesc" rows="3" placeholder="Short Description (shown in search results)" required></textarea>
+                            <textarea id="appLongDesc" rows="5" placeholder="Long Description (full app description)"></textarea>
+                            <input type="text" id="appDeveloper" placeholder="Developer Name">
+                            <button type="button" onclick="uploadApk()">🚀 Upload & Publish</button>
+                            <div id="uploadProgress" style="margin-top: 15px;"></div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Manage Apps Section -->
+                <div id="manageAppsSection" style="display: none;">
+                    <div class="card">
+                        <h3>📦 Manage Your Apps</h3>
+                        <input type="text" id="searchApps" placeholder="🔍 Search apps..." style="margin-bottom: 20px;">
+                        <div id="appsList" class="apps-grid"></div>
+                    </div>
+                </div>
+                
+                <!-- Settings Section -->
+                <div id="settingsSection" style="display: none;">
+                    <div class="card">
+                        <h3>⚙️ Repository Settings</h3>
+                        <p><strong>Repository:</strong> Mezaneyo/APK-DOWNLOAD</p>
+                        <p><strong>Vercel URL:</strong> https://apk-download-six.vercel.app</p>
+                        <hr style="margin: 20px 0;">
+                        <h4>🔧 Maintenance</h4>
+                        <button onclick="repairAppsJson()" class="btn-warning">🔧 Repair apps.json</button>
+                        <button onclick="exportData()" style="margin-left: 10px;">📥 Export All Data</button>
+                        <button onclick="clearCache()" style="margin-left: 10px; background: #718096;">🗑️ Clear Local Cache</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>✏️ Edit App</h3>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div id="editForm">
+                <input type="text" id="editName" placeholder="App Name">
+                <input type="text" id="editVersion" placeholder="Version">
+                <input type="text" id="editSize" placeholder="Size">
+                <input type="text" id="editCategory" placeholder="Category">
+                <textarea id="editDesc" rows="3" placeholder="Short Description"></textarea>
+                <textarea id="editLongDesc" rows="5" placeholder="Long Description"></textarea>
+                <input type="text" id="editDeveloper" placeholder="Developer">
+                <button onclick="saveEdit()">💾 Save Changes</button>
+            </div>
+        </div>
     </div>
 
     <script>
         let githubToken = '';
+        let allApps = [];
+        let currentEditId = null;
         const REPO_OWNER = 'Mezaneyo';
         const REPO_NAME = 'APK-DOWNLOAD';
 
-        function connectGitHub() {
-            const token = document.getElementById('githubToken').value.trim();
-            if (!token) {
-                alert('Please enter your GitHub token');
-                return;
-            }
-            
-            if (!token.startsWith('ghp_')) {
-                alert('⚠️ That doesn\'t look like a valid GitHub token. Tokens should start with "ghp_"');
-                return;
-            }
-            
-            githubToken = token;
-            
-            // Test the token
-            testToken();
+        function showSection(section) {
+            document.querySelectorAll('#dashboardSection, #addAppSection, #manageAppsSection, #settingsSection').forEach(s => s.style.display = 'none');
+            document.getElementById(`${section}Section`).style.display = 'block';
+            if (section === 'manageApps') loadAppsList();
+            if (section === 'dashboard') loadDashboard();
         }
-        
-        async function testToken() {
-            showStatus('Testing connection...', 'warning');
+
+        async function connectGitHub() {
+            const token = document.getElementById('githubToken').value.trim();
+            if (!token) { alert('Enter GitHub token'); return; }
             
             try {
                 const response = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}`, {
-                    headers: { 'Authorization': `token ${githubToken}` }
+                    headers: { 'Authorization': `token ${token}` }
                 });
-                
                 if (response.ok) {
+                    githubToken = token;
                     document.getElementById('tokenSection').style.display = 'none';
-                    document.getElementById('adminControls').style.display = 'block';
-                    showStatus('✅ Connected to GitHub successfully!', 'success');
-                    loadExistingApps();
+                    document.getElementById('adminContent').style.display = 'block';
+                    showAlert('✅ Connected to GitHub successfully!', 'success');
+                    loadDashboard();
+                    loadAppsList();
                 } else {
-                    const error = await response.json();
-                    showStatus(`❌ Connection failed: ${error.message}. Check your token permissions.`, 'error');
+                    showAlert('❌ Invalid token or insufficient permissions', 'error');
                 }
-            } catch (error) {
-                showStatus('❌ Network error. Check your connection.', 'error');
+            } catch(e) {
+                showAlert('❌ Connection failed', 'error');
             }
         }
-        
-        function showStatus(message, type) {
-            const statusDiv = document.getElementById('connectionStatus');
-            statusDiv.textContent = message;
-            statusDiv.className = `status ${type}`;
-            statusDiv.style.display = 'block';
-            setTimeout(() => {
-                if (type !== 'error') {
-                    statusDiv.style.display = 'none';
-                }
-            }, 5000);
-        }
-        
-        async function loadExistingApps() {
+
+        async function loadAppsList(searchTerm = '') {
             try {
-                const response = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/`, {
+                const response = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/apps.json`, {
                     headers: { 'Authorization': `token ${githubToken}` }
                 });
-                const files = await response.json();
-                const apks = files.filter(f => f.name.endsWith('.apk'));
-                
-                if (apks.length === 0) {
-                    document.getElementById('appsList').innerHTML = '<p style="color: #999;">No APK files found in repository</p>';
-                } else {
-                    document.getElementById('appsList').innerHTML = apks.map(apk => `
+                if (response.ok) {
+                    const data = await response.json();
+                    const content = JSON.parse(atob(data.content));
+                    allApps = content.apps || [];
+                    
+                    let filtered = allApps;
+                    if (searchTerm) {
+                        filtered = allApps.filter(a => a.name.toLowerCase().includes(searchTerm.toLowerCase()));
+                    }
+                    
+                    document.getElementById('appsList').innerHTML = filtered.map(app => `
                         <div class="app-item">
-                            <div>
-                                <strong>📱 ${apk.name}</strong><br>
-                                <small>Size: ${(apk.size / 1024 / 1024).toFixed(2)} MB</small>
+                            <div class="app-header">
+                                <div>
+                                    <span class="app-name">📱 ${app.name}</span>
+                                    <span class="stats">v${app.version}</span>
+                                    <span class="stats">${app.size}</span>
+                                    <span class="stats">⭐ ${app.rating || 0}</span>
+                                </div>
+                                <div class="app-actions">
+                                    <button onclick="editApp('${app.id}')" style="background: #ed8936;">✏️ Edit</button>
+                                    <button onclick="deleteApp('${app.id}')" class="btn-danger">🗑️ Delete</button>
+                                </div>
                             </div>
-                            <a href="${apk.download_url}" target="_blank" style="color: #2196F3;">Download</a>
+                            <div class="app-details">${app.description}</div>
+                            <div style="margin-top: 10px; font-size: 12px; color: #718096;">
+                                📥 ${app.downloads || 0} downloads | 📁 ${app.filename}
+                            </div>
                         </div>
                     `).join('');
+                    
+                    if (filtered.length === 0) {
+                        document.getElementById('appsList').innerHTML = '<p style="text-align: center; color: #999;">No apps found</p>';
+                    }
                 }
-            } catch(error) {
-                document.getElementById('appsList').innerHTML = '<p class="error">Error loading files</p>';
+            } catch(e) {
+                document.getElementById('appsList').innerHTML = '<p style="color: red;">Error loading apps</p>';
             }
         }
-        
+
+        async function loadDashboard() {
+            const stats = {
+                totalApps: allApps.length,
+                totalDownloads: allApps.reduce((sum, a) => sum + (a.downloads || 0), 0),
+                avgRating: (allApps.reduce((sum, a) => sum + (a.rating || 0), 0) / allApps.length || 0).toFixed(1),
+                categories: [...new Set(allApps.map(a => a.category))].length
+            };
+            
+            document.getElementById('statCards').innerHTML = `
+                <div class="stat-card"><div class="stat-number">${stats.totalApps}</div><div>Total Apps</div></div>
+                <div class="stat-card"><div class="stat-number">${stats.totalDownloads}</div><div>Total Downloads</div></div>
+                <div class="stat-card"><div class="stat-number">${stats.avgRating}</div><div>Avg Rating</div></div>
+                <div class="stat-card"><div class="stat-number">${stats.categories}</div><div>Categories</div></div>
+            `;
+            
+            document.getElementById('recentActivity').innerHTML = `
+                <p>✅ Last updated: ${new Date().toLocaleString()}</p>
+                <p>📦 ${allApps.length} apps in store</p>
+                <p>🎯 Most downloaded: ${allApps.sort((a,b)=>(b.downloads||0)-(a.downloads||0))[0]?.name || 'None'}</p>
+            `;
+        }
+
         async function uploadApk() {
-            const fileInput = document.getElementById('apkFile');
-            const file = fileInput.files[0];
+            const file = document.getElementById('apkFile').files[0];
+            if (!file) { alert('Select APK file'); return; }
             
-            if (!file) {
-                alert('Select an APK file to upload');
-                return;
-            }
+            const appName = document.getElementById('appName').value;
+            if (!appName) { alert('Enter app name'); return; }
             
-            const appName = document.getElementById('appName').value.trim();
-            if (!appName) {
-                alert('Enter the app name');
-                return;
-            }
-            
-            const statusDiv = document.getElementById('uploadStatus');
-            statusDiv.innerHTML = '<div class="status warning">⏳ Uploading to GitHub...</div>';
+            const progressDiv = document.getElementById('uploadProgress');
+            progressDiv.innerHTML = '<div class="alert alert-success">⏳ Uploading to GitHub...</div>';
             
             const reader = new FileReader();
             reader.onload = async function(e) {
@@ -183,116 +288,220 @@
                     // Upload APK
                     const uploadResponse = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${filePath}`, {
                         method: 'PUT',
-                        headers: {
-                            'Authorization': `token ${githubToken}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            message: `Add ${file.name}`,
-                            content: base64Content,
-                            branch: 'main'
-                        })
+                        headers: { 'Authorization': `token ${githubToken}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ message: `Add ${file.name}`, content: base64Content, branch: 'main' })
                     });
                     
-                    if (!uploadResponse.ok) {
-                        throw new Error('APK upload failed');
+                    if (!uploadResponse.ok) throw new Error('APK upload failed');
+                    
+                    progressDiv.innerHTML = '<div class="alert alert-success">✅ APK uploaded! Updating apps.json...</div>';
+                    
+                    // Get current apps.json
+                    let existingApps = { apps: [] };
+                    let sha = null;
+                    const getResponse = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/apps.json`, {
+                        headers: { 'Authorization': `token ${githubToken}` }
+                    });
+                    if (getResponse.ok) {
+                        const data = await getResponse.json();
+                        sha = data.sha;
+                        existingApps = JSON.parse(atob(data.content));
                     }
                     
-                    statusDiv.innerHTML = '<div class="status success">✅ APK uploaded! Updating apps.json...</div>';
+                    const newApp = {
+                        id: filePath.replace('.apk', '').toLowerCase().replace(/[^a-z0-9]/g, '-'),
+                        name: appName,
+                        filename: filePath,
+                        version: document.getElementById('appVersion').value || '1.0',
+                        size: document.getElementById('appSize').value || 'Unknown',
+                        category: document.getElementById('appCategory').value || 'Apps',
+                        description: document.getElementById('appDesc').value || 'No description',
+                        longDescription: document.getElementById('appLongDesc').value || document.getElementById('appDesc').value,
+                        developer: document.getElementById('appDeveloper').value || REPO_OWNER,
+                        downloads: 0,
+                        rating: 0,
+                        lastUpdated: new Date().toISOString().split('T')[0]
+                    };
                     
-                    // Update apps.json
-                    await updateAppsJson(file.name);
+                    existingApps.apps.push(newApp);
                     
-                    statusDiv.innerHTML = '<div class="status success">✅ App published successfully! Vercel will auto-deploy in ~1 minute.</div>';
+                    const updateResponse = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/apps.json`, {
+                        method: 'PUT',
+                        headers: { 'Authorization': `token ${githubToken}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ message: 'Add new app', content: btoa(JSON.stringify(existingApps, null, 2)), sha: sha, branch: 'main' })
+                    });
                     
-                    // Clear form
-                    document.getElementById('appName').value = '';
-                    document.getElementById('appVersion').value = '';
-                    document.getElementById('appSize').value = '';
-                    document.getElementById('appCategory').value = '';
-                    document.getElementById('appDesc').value = '';
-                    document.getElementById('appLongDesc').value = '';
-                    fileInput.value = '';
-                    
-                    // Refresh list
-                    loadExistingApps();
-                    
-                } catch (error) {
-                    statusDiv.innerHTML = `<div class="status error">❌ Error: ${error.message}</div>`;
+                    if (updateResponse.ok) {
+                        progressDiv.innerHTML = '<div class="alert alert-success">✅ App published! Vercel will auto-deploy in ~1 minute.</div>';
+                        document.getElementById('uploadForm').reset();
+                        loadAppsList();
+                        loadDashboard();
+                        setTimeout(() => { progressDiv.innerHTML = ''; }, 3000);
+                    }
+                } catch(e) {
+                    progressDiv.innerHTML = `<div class="alert alert-error">❌ Error: ${e.message}</div>`;
                 }
             };
             reader.readAsDataURL(file);
         }
-        
-        async function updateAppsJson(apkFilename) {
-            const appId = apkFilename.replace('.apk', '').toLowerCase().replace(/[^a-z0-9]/g, '-');
+
+        function editApp(appId) {
+            const app = allApps.find(a => a.id === appId);
+            if (!app) return;
+            currentEditId = appId;
+            document.getElementById('editName').value = app.name;
+            document.getElementById('editVersion').value = app.version;
+            document.getElementById('editSize').value = app.size;
+            document.getElementById('editCategory').value = app.category || '';
+            document.getElementById('editDesc').value = app.description;
+            document.getElementById('editLongDesc').value = app.longDescription || '';
+            document.getElementById('editDeveloper').value = app.developer || '';
+            document.getElementById('editModal').style.display = 'flex';
+        }
+
+        async function saveEdit() {
+            const appIndex = allApps.findIndex(a => a.id === currentEditId);
+            if (appIndex === -1) return;
             
-            const newApp = {
-                id: appId,
-                name: document.getElementById('appName').value,
-                filename: apkFilename,
-                version: document.getElementById('appVersion').value || '1.0',
-                size: document.getElementById('appSize').value || 'Unknown',
-                category: document.getElementById('appCategory').value || 'Apps',
-                description: document.getElementById('appDesc').value || 'No description',
-                longDescription: document.getElementById('appLongDesc').value || document.getElementById('appDesc').value,
-                downloads: 0,
-                rating: 0,
-                developer: REPO_OWNER,
+            allApps[appIndex] = {
+                ...allApps[appIndex],
+                name: document.getElementById('editName').value,
+                version: document.getElementById('editVersion').value,
+                size: document.getElementById('editSize').value,
+                category: document.getElementById('editCategory').value,
+                description: document.getElementById('editDesc').value,
+                longDescription: document.getElementById('editLongDesc').value,
+                developer: document.getElementById('editDeveloper').value,
                 lastUpdated: new Date().toISOString().split('T')[0]
             };
             
-            // Get existing apps.json
-            let existingApps = { apps: [] };
-            let sha = null;
+            await saveAppsToGitHub();
+            closeModal();
+            loadAppsList();
+            loadDashboard();
+            showAlert('✅ App updated successfully!', 'success');
+        }
+
+        async function deleteApp(appId) {
+            if (!confirm('⚠️ Are you sure you want to delete this app? This action cannot be undone.')) return;
             
+            const app = allApps.find(a => a.id === appId);
+            if (!app) return;
+            
+            // Remove from list
+            allApps = allApps.filter(a => a.id !== appId);
+            await saveAppsToGitHub();
+            
+            // Optionally delete APK file (optional)
+            if (confirm('Delete the APK file from GitHub as well?')) {
+                try {
+                    const getResponse = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${app.filename}`, {
+                        headers: { 'Authorization': `token ${githubToken}` }
+                    });
+                    if (getResponse.ok) {
+                        const data = await getResponse.json();
+                        await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${app.filename}`, {
+                            method: 'DELETE',
+                            headers: { 'Authorization': `token ${githubToken}`, 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ message: `Delete ${app.filename}`, sha: data.sha, branch: 'main' })
+                        });
+                    }
+                } catch(e) { console.log('APK delete skipped'); }
+            }
+            
+            loadAppsList();
+            loadDashboard();
+            showAlert('✅ App deleted successfully!', 'success');
+        }
+
+        async function saveAppsToGitHub() {
             try {
                 const getResponse = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/apps.json`, {
                     headers: { 'Authorization': `token ${githubToken}` }
                 });
+                let sha = null;
                 if (getResponse.ok) {
                     const data = await getResponse.json();
                     sha = data.sha;
-                    const content = atob(data.content);
-                    existingApps = JSON.parse(content);
                 }
+                
+                const updateResponse = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/apps.json`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `token ${githubToken}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: 'Update apps.json', content: btoa(JSON.stringify({ apps: allApps }, null, 2)), sha: sha, branch: 'main' })
+                });
+                
+                if (!updateResponse.ok) throw new Error('Failed to save');
             } catch(e) {
-                // apps.json doesn't exist yet, will create it
-            }
-            
-            existingApps.apps.push(newApp);
-            
-            // Upload updated apps.json
-            const uploadResponse = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/apps.json`, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `token ${githubToken}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    message: 'Update apps.json with new app',
-                    content: btoa(JSON.stringify(existingApps, null, 2)),
-                    sha: sha,
-                    branch: 'main'
-                })
-            });
-            
-            if (!uploadResponse.ok) {
-                throw new Error('Failed to update apps.json');
+                showAlert('❌ Error saving changes', 'error');
             }
         }
-        
-        function refreshApps() {
-            loadExistingApps();
+
+        async function backupData() {
+            const dataStr = JSON.stringify({ apps: allApps, backupDate: new Date().toISOString() }, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `apps-backup-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showAlert('💾 Backup downloaded!', 'success');
         }
-        
-        function disconnect() {
-            githubToken = '';
-            document.getElementById('tokenSection').style.display = 'block';
-            document.getElementById('adminControls').style.display = 'none';
-            document.getElementById('githubToken').value = '';
-            document.getElementById('connectionStatus').style.display = 'none';
+
+        async function exportData() {
+            backupData();
         }
+
+        async function repairAppsJson() {
+            if (confirm('This will create a fresh apps.json if corrupted. Continue?')) {
+                const freshApps = { apps: allApps.length ? allApps : [] };
+                try {
+                    const getResponse = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/apps.json`, {
+                        headers: { 'Authorization': `token ${githubToken}` }
+                    });
+                    let sha = null;
+                    if (getResponse.ok) {
+                        const data = await getResponse.json();
+                        sha = data.sha;
+                    }
+                    
+                    await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/apps.json`, {
+                        method: 'PUT',
+                        headers: { 'Authorization': `token ${githubToken}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ message: 'Repair apps.json', content: btoa(JSON.stringify(freshApps, null, 2)), sha: sha, branch: 'main' })
+                    });
+                    showAlert('✅ apps.json repaired!', 'success');
+                } catch(e) {
+                    showAlert('❌ Repair failed', 'error');
+                }
+            }
+        }
+
+        function clearCache() {
+            localStorage.clear();
+            showAlert('🗑️ Local cache cleared!', 'success');
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').style.display = 'none';
+            currentEditId = null;
+        }
+
+        function showAlert(message, type) {
+            const alertDiv = document.getElementById('alertMessage');
+            alertDiv.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            setTimeout(() => { alertDiv.innerHTML = ''; }, 4000);
+        }
+
+        // Search filter for manage apps
+        document.getElementById('searchApps')?.addEventListener('input', (e) => {
+            loadAppsList(e.target.value);
+        });
+
+        window.onclick = function(e) {
+            if (e.target === document.getElementById('editModal')) closeModal();
+        };
     </script>
 </body>
 </html>
